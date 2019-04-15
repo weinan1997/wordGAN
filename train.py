@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torch.functional as F
+import torch.nn.functional as F
 import matplotlib.pyplot as plt
 
 def train(netD, netG, dataloader, args):
@@ -9,10 +9,12 @@ def train(netD, netG, dataloader, args):
     beta1 = args['beta1']
     epoch_num = args['epoch_num']
     device = args['device']
-    word2vec = args['word2vec']
+    word2vec = args['word2vec'].to(device)
+    b_size = args['batch_size']
     nz = args['nz']
     optD = optim.Adam(netD.parameters(), lr=lr, betas=(beta1, 0.999))
     optG = optim.Adam(netG.parameters(), lr=lr, betas=(beta1, 0.999))
+    criterion = nn.BCELoss()
 
     G_losses = []
     D_losses = []
@@ -24,15 +26,19 @@ def train(netD, netG, dataloader, args):
             real_data = data[0].to(device)
             label = data[1].to(device)
             embedded_data = F.embedding(real_data, word2vec)
+            embedded_data.unsqueeze_(1)
             output = netD(embedded_data)
-            lossD_real = nn.BCELoss(output, label)
+            lossD_real = criterion(output, label)
             lossD_real.backward()
             D_x = output.mean().item()
             noise = torch.randn(b_size, nz, 1, device=device)
             fake = netG(noise)
+            fake = fake.permute(0, 2, 1)
+            fake = torch.matmul(fake, word2vec)
+            fake.unsqueeze_(1)
             label.fill_(0)
-            output = netD(fake.detach()).view(-1)
-            lossD_fake = nn.BCELoss(output, label)
+            output = netD(fake.detach())
+            lossD_fake = criterion(output, label)
             lossD_fake.backward()
             D_G_z1 = output.mean().item()
             lossD = lossD_real + lossD_fake
@@ -40,10 +46,8 @@ def train(netD, netG, dataloader, args):
 
             netG.zero_grad()
             label.fill_(1)
-            output = netD(fake).view(-1)
-            output.view_(0,2,1)
-            output = torch.matmul(output, word2vec)
-            lossG = nn.BCELoss(output, label)
+            output = netD(fake)
+            lossG = criterion(output, label)
             lossG.backward()
             D_G_z2 = output.mean().item()
             optG.step()
@@ -53,10 +57,10 @@ def train(netD, netG, dataloader, args):
                         % (epoch, epoch_num, i, len(dataloader),
                         lossD.item(), lossG.item(), D_x, D_G_z1, D_G_z2))
 
-            G_losses.append(errG.item())
-            D_losses.append(errD.item())
+            G_losses.append(lossG.item())
+            D_losses.append(lossD.item())
 
-            return G_losses, D_losses
+    return G_losses, D_losses
 
 def plotLoss(G_losses, D_losses):
     plt.figure(figsize=(10,5))
@@ -66,4 +70,4 @@ def plotLoss(G_losses, D_losses):
     plt.xlabel("iterations")
     plt.ylabel("Loss")
     plt.legend()
-    plt.show()
+    plt.save('loss.png')

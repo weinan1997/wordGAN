@@ -7,7 +7,7 @@ import argparse
 import generator
 import discriminator
 import train
-
+import os
 
 def readData(maxLength):
     lang = preprocess.Lang()
@@ -50,10 +50,14 @@ def weights_init(m):
   
 def main():
     args = parseArgs()
-    train_text, W = readData(args['max_length'])
+    if not os.path.exists("data/processed.data"):
+        train_text, W = readData(args['max_length'])
+        torch.save([train_text, W], "data/processed.data")
+    else:
+        train_text, W = torch.load("data/processed.data")      
     train_text = torch.tensor(train_text)
     W = torch.tensor(W)
-    target = torch.zeros(train_text.shape[0])+1
+    target = torch.full((train_text.shape[0],1,1,1), 1)
     data = torch.utils.data.TensorDataset(train_text, target)
     dataloader = torch.utils.data.DataLoader(data, batch_size=args['batch_size'], shuffle=True)
 
@@ -69,7 +73,7 @@ def main():
     }
     netD = discriminator.Discriminator(Dargs)
 
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     netD.to(device)
     netG.to(device)
@@ -82,6 +86,7 @@ def main():
         'epoch_num': args['epoch_num'],
         'device': device,
         'word2vec': W,
+        'batch_size': args['batch_size'],
         'nz': args['hidden_vec']
     }
 

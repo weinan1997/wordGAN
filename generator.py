@@ -9,16 +9,16 @@ class Generator(nn.Module):
         self.maxLength = args['max_length']
 
         self.main = nn.Sequential(
-            nn.ConvTranspose1d(self.nz, self.vocabSize*8, self.maxLength//4, 1, 0, bias=False),
-            nn.BatchNorm1d(self.vocabSize*8),
+            nn.ConvTranspose1d(self.nz, self.vocabSize//2, self.maxLength//2, 1, 0, bias=False),
+            nn.BatchNorm1d(self.vocabSize//2),
             nn.LeakyReLU(True),
-            nn.ConvTranspose1d(self.vocabSize*8, self.vocabSize*4, self.maxLength//4+1, 1, 0, bias=False),
-            nn.BatchNorm1d(self.vocabSize*4),
-            nn.LeakyReLU(True),
-            nn.ConvTranspose1d(self.vocabSize*4, self.vocabSize*2, self.maxLength//4+1, 1, 0, bias=False),
-            nn.BatchNorm1d(self.vocabSize*2),
-            nn.LeakyReLU(True),
-            nn.ConvTranspose1d(self.vocabSize*2, self.vocabSize*1, self.maxLength//4+1, 1, 0, bias=False),
+            #nn.ConvTranspose1d(self.vocabSize*8, self.vocabSize*4, self.maxLength//4+1, 1, 0, bias=False),
+            #nn.BatchNorm1d(self.vocabSize*4),
+            #nn.LeakyReLU(True),
+            #nn.ConvTranspose1d(self.vocabSize*4, self.vocabSize*2, self.maxLength//4+1, 1, 0, bias=False),
+            #nn.BatchNorm1d(self.vocabSize*2),
+            #nn.LeakyReLU(True),
+            nn.ConvTranspose1d(self.vocabSize//2, self.vocabSize, self.maxLength//2+1, 1, 0, bias=False),
             nn.Tanh(),
             nn.Softmax(dim=1)
         )
