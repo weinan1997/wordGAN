@@ -10,7 +10,6 @@ def train(netD, netG, dataloader, args):
     epoch_num = args['epoch_num']
     device = args['device']
     word2vec = args['word2vec'].to(device)
-    b_size = args['batch_size']
     nz = args['nz']
     optD = optim.Adam(netD.parameters(), lr=lr, betas=(beta1, 0.999))
     optG = optim.Adam(netG.parameters(), lr=lr, betas=(beta1, 0.999))
@@ -31,7 +30,7 @@ def train(netD, netG, dataloader, args):
             lossD_real = criterion(output, label)
             lossD_real.backward()
             D_x = output.mean().item()
-            noise = torch.randn(b_size, nz, 1, device=device)
+            noise = torch.randn(real_data.shape[0], nz, 1, device=device)
             fake = netG(noise)
             fake = fake.permute(0, 2, 1)
             fake = torch.matmul(fake, word2vec)

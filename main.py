@@ -86,7 +86,6 @@ def main():
         'epoch_num': args['epoch_num'],
         'device': device,
         'word2vec': W,
-        'batch_size': args['batch_size'],
         'nz': args['hidden_vec']
     }
 
